@@ -9,7 +9,6 @@ and this project adheres to [Semantic Versioning].
 
 - Initial release
 
-
 ## [0.1.1] - 2023-04-26
 
 ### Added
@@ -23,7 +22,6 @@ and this project adheres to [Semantic Versioning].
 ### Changed
 
 - Updated strings.json
-
 
 ## [0.1.2] - 2023-04-26
 

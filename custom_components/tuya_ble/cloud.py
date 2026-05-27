@@ -1,10 +1,10 @@
 """The Tuya BLE integration."""
+
 from __future__ import annotations
 
-import logging
-
-from dataclasses import dataclass
 import json
+import logging
+from dataclasses import dataclass
 from typing import Any, Iterable
 
 from homeassistant.const import (
@@ -15,46 +15,35 @@ from homeassistant.const import (
     CONF_USERNAME,
 )
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity import DeviceInfo, EntityDescription
-from homeassistant.helpers.update_coordinator import (
-    CoordinatorEntity,
-    DataUpdateCoordinator,
-)
-
 from tuya_iot import (
-    TuyaOpenAPI,
     AuthType,
-    TuyaOpenMQ,
-    TuyaDeviceManager,
-)
-
-from .tuya_ble import (
-    AbstaractTuyaBLEDeviceManager,
-    TuyaBLEDevice,
-    TuyaBLEDeviceCredentials,
+    TuyaOpenAPI,
 )
 
 from .const import (
-    CONF_PRODUCT_MODEL,
-    CONF_UUID,
-    CONF_LOCAL_KEY,
-    CONF_CATEGORY,
-    CONF_PRODUCT_ID,
-    CONF_DEVICE_NAME,
-    CONF_PRODUCT_NAME,
-    DOMAIN,
-    TUYA_DOMAIN,
-    TUYA_API_DEVICES_URL,
-    TUYA_API_FACTORY_INFO_URL,
-    TUYA_FACTORY_INFO_MAC,
     CONF_ACCESS_ID,
     CONF_ACCESS_SECRET,
-    CONF_AUTH_TYPE,
     CONF_APP_TYPE,
+    CONF_AUTH_TYPE,
+    CONF_CATEGORY,
+    CONF_DEVICE_NAME,
     CONF_ENDPOINT,
-    SMARTLIFE_APP,
+    CONF_LOCAL_KEY,
+    CONF_PRODUCT_ID,
+    CONF_PRODUCT_MODEL,
+    CONF_PRODUCT_NAME,
+    CONF_UUID,
+    DOMAIN,
+    TUYA_API_DEVICES_URL,
+    TUYA_API_FACTORY_INFO_URL,
+    TUYA_DOMAIN,
+    TUYA_FACTORY_INFO_MAC,
     TUYA_RESPONSE_RESULT,
     TUYA_RESPONSE_SUCCESS,
+)
+from .tuya_ble import (
+    AbstractTuyaBLEDeviceManager,
+    TuyaBLEDeviceCredentials,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -92,11 +81,12 @@ CONF_TUYA_DEVICE_KEYS = [
 _cache: dict[str, TuyaCloudCacheItem] = {}
 
 
-class HASSTuyaBLEDeviceManager(AbstaractTuyaBLEDeviceManager):
+class HASSTuyaBLEDeviceManager(AbstractTuyaBLEDeviceManager):
     """Cloud connected manager of the Tuya BLE devices credentials."""
 
     def __init__(self, hass: HomeAssistant, data: dict[str, Any]) -> None:
-        assert hass is not None
+        if hass is None:
+            raise ValueError("hass must not be None")
         self._hass = hass
         self._data = data
 
@@ -150,7 +140,7 @@ class HASSTuyaBLEDeviceManager(AbstaractTuyaBLEDeviceManager):
             _LOGGER.debug("Successful login for %s", data[CONF_USERNAME])
             if add_to_cache:
                 auth_type = data[CONF_AUTH_TYPE]
-                if type(auth_type) is AuthType:
+                if isinstance(auth_type, AuthType):
                     data[CONF_AUTH_TYPE] = auth_type.value
                 cache_key = self._get_cache_key(data)
                 cache_item = _cache.get(cache_key)
@@ -164,7 +154,7 @@ class HASSTuyaBLEDeviceManager(AbstaractTuyaBLEDeviceManager):
 
     def _check_login(self) -> bool:
         cache_key = self._get_cache_key(self._data)
-        return _cache.get(cache_key) != None
+        return _cache.get(cache_key) is not None
 
     async def login(self, add_to_cache: bool = False) -> dict[Any, Any]:
         return await self._login(self._data, add_to_cache)
@@ -244,7 +234,7 @@ class HASSTuyaBLEDeviceManager(AbstaractTuyaBLEDeviceManager):
         """Get credentials of the Tuya BLE device."""
         global _cache
         item: TuyaCloudCacheItem | None = None
-        credentials: dict[str, any] | None = None
+        credentials: dict[str, Any] | None = None
         result: TuyaBLEDeviceCredentials | None = None
 
         if not force_update and self._has_credentials(self._data):

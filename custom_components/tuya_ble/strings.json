@@ -24,7 +24,7 @@
           "password": "[%key:common::config_flow::data::password%]",
           "username": "Account"
         },
-        "description": "Tuya BLE requires obtaining encryption key from Tuya cloud. Almost all devices only need to access the cloud once during setup.\n\nRefer to documentation of Tuya integration to retrive the cloud credentials https://www.home-assistant.io/integrations/tuya/\n\nEnter your Tuya credentials."
+        "description": "Tuya BLE requires obtaining encryption key from Tuya cloud. Almost all devices only need to access the cloud once during setup.\n\nRefer to documentation of Tuya integration to retrieve the cloud credentials https://www.home-assistant.io/integrations/tuya/\n\nEnter your Tuya credentials."
       }
     }
   },
@@ -89,7 +89,7 @@
         }
       },
       "beep_volume": {
-          "name": "Lock Volume"
+        "name": "Lock Volume"
       }
     },
     "binary_sensor": {
@@ -97,7 +97,7 @@
         "name": "[%key:component::sensor::entity_component::battery::name%]"
       },
       "lock_motor_state": {
-          "name": "Motor State"
+        "name": "Motor State"
       }
     },
     "sensor": {
@@ -146,27 +146,27 @@
         "name": "Water intake"
       },
       "residual_electricity": {
-          "name": "Battery"
+        "name": "Battery"
       },
       "alarm_lock": {
-          "name": "Alarm"
+        "name": "Alarm"
       },
       "wrong_finger": {
-          "name": "Wrong Fingerprint"
+        "name": "Wrong Fingerprint"
       },
       "wrong_password": {
-          "name": "Wrong Password"
+        "name": "Wrong Password"
       },
       "low_battery": {
-          "name": "Low Battery"
+        "name": "Low Battery"
       },
       "time_left": {
-          "name": "Remaining irrigation time"
+        "name": "Remaining irrigation time"
       }
     },
     "switch": {
       "programming_mode": {
-        "name": "Programming Mode" 
+        "name": "Programming Mode"
       },
       "programming_switch": {
         "name": "Programming Switch"
@@ -200,7 +200,7 @@
       },
       "program_repeat_forever": {
         "name": "Repeat forever"
-      },      
+      },
       "reverse_positions": {
         "name": "Reverse positions"
       },
@@ -208,11 +208,11 @@
         "name": "[%key:component::switch::entity_component::_::name%]"
       },
       "lock_motor_state": {
-          "name": "Motor State"
-      },            
+        "name": "Motor State"
+      },
       "water_valve": {
-          "name": "Irrigation valve"
-      }    
+        "name": "Irrigation valve"
+      }
     },
     "text": {
       "program": {
@@ -222,9 +222,9 @@
   },
   "options": {
     "error": {
-      "device_not_registered": "Device is not registered in Tuya cloud",
-      "invalid_auth": "[%key:common::config_flow::error::invalid_auth%]",
-      "login_error": "Login error ({code}): {msg}"
+      "device_not_registered": "Device credentials could not be found in the Tuya cloud. Ensure the device is linked to the account you are logging in with inside the Tuya or Smart Life app, that the correct country/region is selected, and that your Tuya IoT Platform project is active with this device visible in its device list at iot.tuya.com.",
+      "invalid_auth": "Invalid credentials. Verify that the Access ID and Access Secret are copied from your Cloud Project on the Tuya IoT Platform (iot.tuya.com › Cloud › Projects), not from the Tuya or Smart Life mobile app. Also ensure the Cloud Development subscription is enabled for your project.",
+      "login_error": "Login failed (code {code}: {msg}). Common causes: incorrect Access ID or Access Secret, the selected country does not match your Tuya account region, or the Tuya IoT Platform subscription has expired. Verify your credentials at iot.tuya.com."
     },
     "step": {
       "login": {
@@ -235,7 +235,7 @@
           "password": "[%key:common::config_flow::data::password%]",
           "username": "Account"
         },
-        "description": "Refer to documentation of Tuya integration to retrive the cloud credentials https://www.home-assistant.io/integrations/tuya/\n\nEnter your Tuya credentials."
+        "description": "Refer to documentation of Tuya integration to retrieve the cloud credentials https://www.home-assistant.io/integrations/tuya/\n\nEnter your Tuya credentials."
       }
     }
   }

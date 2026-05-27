@@ -1,8 +1,9 @@
 """The Tuya BLE integration."""
+
 from __future__ import annotations
+
 from dataclasses import dataclass
 
-from enum import StrEnum
 from tuya_iot import TuyaCloudOpenAPIEndpoint
 from typing_extensions import Final
 
@@ -26,7 +27,7 @@ CONF_AUTH_TYPE = "auth_type"
 CONF_PROJECT_TYPE = "tuya_project_type"
 CONF_ENDPOINT = "endpoint"
 CONF_ACCESS_ID = "access_id"
-CONF_ACCESS_SECRET = "access_secret"
+CONF_ACCESS_SECRET = "access_secret"  # nosec B105
 CONF_APP_TYPE = "app_type"
 SMARTLIFE_APP = "smartlife"
 TUYA_SMART_APP = "tuyaSmart"
@@ -56,6 +57,7 @@ FINGERBOT_MODE_PUSH: Final = "push"
 FINGERBOT_MODE_SWITCH: Final = "switch"
 FINGERBOT_MODE_PROGRAM: Final = "program"
 FINGERBOT_BUTTON_EVENT: Final = "fingerbot_button_pressed"
+
 
 @dataclass
 class Country:

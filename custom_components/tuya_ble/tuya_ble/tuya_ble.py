@@ -11,15 +11,15 @@ from struct import pack, unpack
 from bleak.backends.device import BLEDevice
 from bleak.backends.scanner import AdvertisementData
 from bleak.exc import BleakDBusError
-from bleak_retry_connector import BLEAK_BACKOFF_TIME
-from bleak_retry_connector import BLEAK_RETRY_EXCEPTIONS
 from bleak_retry_connector import (
+    BLEAK_BACKOFF_TIME,
+    BLEAK_RETRY_EXCEPTIONS,
     BleakClientWithServiceCache,
     BleakError,
     BleakNotFoundError,
     establish_connection,
 )
-from Crypto.Cipher import AES
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
 from .const import (
     CHARACTERISTIC_NOTIFY,
@@ -38,7 +38,7 @@ from .exceptions import (
     TuyaBLEDeviceError,
     TuyaBLEEnumValueError,
 )
-from .manager import AbstaractTuyaBLEDeviceManager, TuyaBLEDeviceCredentials
+from .manager import AbstractTuyaBLEDeviceManager, TuyaBLEDeviceCredentials
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -211,7 +211,7 @@ global_connect_lock = asyncio.Lock()
 class TuyaBLEDevice:
     def __init__(
         self,
-        device_manager: AbstaractTuyaBLEDeviceManager,
+        device_manager: AbstractTuyaBLEDeviceManager,
         ble_device: BLEDevice,
         advertisement_data: AdvertisementData | None = None,
     ) -> None:
@@ -250,8 +250,7 @@ class TuyaBLEDevice:
         self._input_buffer: bytearray | None = None
         self._input_expected_packet_num = 0
         self._input_expected_length = 0
-        self._input_expected_responses: dict[int,
-                                             asyncio.Future[int] | None] = {}
+        self._input_expected_responses: dict[int, asyncio.Future[int] | None] = {}
         # self._input_future: asyncio.Future[int] | None = None
 
         self._datapoints = TuyaBLEDataPoints(self)
@@ -267,7 +266,7 @@ class TuyaBLEDevice:
         _LOGGER.debug("%s: Initializing", self.address)
         if await self._update_device_info():
             self._decode_advertisement_data()
-            
+
     def _build_pairing_request(self) -> bytes:
         result = bytearray()
 
@@ -301,7 +300,9 @@ class TuyaBLEDevice:
                 )
             if self._device_info:
                 self._local_key = self._device_info.local_key[:6].encode()
-                self._login_key = hashlib.md5(self._local_key).digest()
+                self._login_key = hashlib.md5(
+                    self._local_key, usedforsecurity=False
+                ).digest()
 
         return self._device_info is not None
 
@@ -311,8 +312,7 @@ class TuyaBLEDevice:
         raw_uuid: bytes | None = None
         if self._advertisement_data:
             if self._advertisement_data.service_data:
-                service_data = self._advertisement_data.service_data.get(
-                    SERVICE_UUID)
+                service_data = self._advertisement_data.service_data.get(SERVICE_UUID)
                 if service_data and len(service_data) > 1:
                     match service_data[0]:
                         case 0:
@@ -329,9 +329,13 @@ class TuyaBLEDevice:
                     self._protocol_version = manufacturer_data[1]
                     raw_uuid = manufacturer_data[6:]
                     if raw_product_id:
-                        key = hashlib.md5(raw_product_id).digest()
-                        cipher = AES.new(key, AES.MODE_CBC, key)
-                        raw_uuid = cipher.decrypt(raw_uuid)
+                        key = hashlib.md5(
+                            raw_product_id, usedforsecurity=False
+                        ).digest()
+                        _decryptor = Cipher(
+                            algorithms.AES(key), modes.CBC(key)
+                        ).decryptor()
+                        raw_uuid = _decryptor.update(raw_uuid) + _decryptor.finalize()
                         self._uuid = raw_uuid.decode("utf-8")
 
     @property
@@ -489,7 +493,6 @@ class TuyaBLEDevice:
 
     def _disconnected(self, client: BleakClientWithServiceCache) -> None:
         """Disconnected callback."""
-        was_paired = self._is_paired
         self._is_paired = False
         if self._expected_disconnect:
             _LOGGER.debug(
@@ -591,30 +594,30 @@ class TuyaBLEDevice:
                         "%s: communication failed", self.address, exc_info=True
                     )
                     continue
-                except:
-                    _LOGGER.debug("%s: unexpected error",
-                                  self.address, exc_info=True)
+                except Exception:
+                    _LOGGER.debug("%s: unexpected error", self.address, exc_info=True)
                     continue
 
                 if client and client.is_connected:
-                    _LOGGER.debug("%s: Connected; RSSI: %s",
-                                  self.address, self.rssi)
+                    _LOGGER.debug("%s: Connected; RSSI: %s", self.address, self.rssi)
                     self._client = client
                     try:
                         await self._client.start_notify(
                             CHARACTERISTIC_NOTIFY, self._notification_handler
                         )
-                    except:  # [BLEAK_EXCEPTIONS, BleakNotFoundError]:
+                    except Exception:  # [BLEAK_EXCEPTIONS, BleakNotFoundError]:
                         self._client = None
-                        _LOGGER.error("%s: starting notifications failed",
-                                      self.address, exc_info=True)
+                        _LOGGER.error(
+                            "%s: starting notifications failed",
+                            self.address,
+                            exc_info=True,
+                        )
                         continue
                 else:
                     continue
 
                 if self._client and self._client.is_connected:
-                    _LOGGER.debug(
-                        "%s: Sending device info request", self.address)
+                    _LOGGER.debug("%s: Sending device info request", self.address)
                     try:
                         if not await self._send_packet_while_connected(
                             TuyaBLECode.FUN_SENDER_DEVICE_INFO,
@@ -628,10 +631,13 @@ class TuyaBLEDevice:
                                 self.address,
                             )
                             continue
-                    except:  # [BLEAK_EXCEPTIONS, BleakNotFoundError]:
+                    except Exception:  # [BLEAK_EXCEPTIONS, BleakNotFoundError]:
                         self._client = None
-                        _LOGGER.error("%s: Sending device info request failed",
-                                      self.address, exc_info=True)
+                        _LOGGER.error(
+                            "%s: Sending device info request failed",
+                            self.address,
+                            exc_info=True,
+                        )
                         continue
                 else:
                     continue
@@ -651,10 +657,13 @@ class TuyaBLEDevice:
                                 self.address,
                             )
                             continue
-                    except:  # [BLEAK_EXCEPTIONS, BleakNotFoundError]:
+                    except Exception:  # [BLEAK_EXCEPTIONS, BleakNotFoundError]:
                         self._client = None
-                        _LOGGER.error("%s: Sending pairing request failed",
-                                      self.address, exc_info=True)
+                        _LOGGER.error(
+                            "%s: Sending pairing request failed",
+                            self.address,
+                            exc_info=True,
+                        )
                         continue
                 else:
                     continue
@@ -764,8 +773,10 @@ class TuyaBLEDevice:
         while len(raw) % 16 != 0:
             raw += b"\x00"
 
-        cipher = AES.new(key, AES.MODE_CBC, iv)
-        encrypted = security_flag + iv + cipher.encrypt(raw)
+        _encryptor = Cipher(algorithms.AES(key), modes.CBC(iv)).encryptor()
+        encrypted = (
+            security_flag + iv + _encryptor.update(bytes(raw)) + _encryptor.finalize()
+        )
 
         command = []
         packet_num = 0
@@ -852,8 +863,7 @@ class TuyaBLEDevice:
                 seq_num,
                 code.name,
             )
-        packets: list[bytes] = self._build_packets(
-            seq_num, code, data, response_to)
+        packets: list[bytes] = self._build_packets(seq_num, code, data, response_to)
         await self._int_send_packet_while_connected(packets)
         if future:
             try:
@@ -951,7 +961,7 @@ class TuyaBLEDevice:
                         packet,
                         False,
                     )
-                except:
+                except Exception as err:
                     _LOGGER.error(
                         "%s: Error during sending packet",
                         self.address,
@@ -959,7 +969,7 @@ class TuyaBLEDevice:
                     )
                     if self._client and self._client.is_connected:
                         self._disconnected(self._client)
-                    raise BleakError()
+                    raise BleakError() from err
             else:
                 _LOGGER.error(
                     "%s: Client disconnected during sending packet",
@@ -1030,11 +1040,11 @@ class TuyaBLEDevice:
                 raise TuyaBLEDataLengthError()
             raw_value = data[pos:next_pos]
             match type:
-                case (TuyaBLEDataPointType.DT_RAW | TuyaBLEDataPointType.DT_BITMAP):
+                case TuyaBLEDataPointType.DT_RAW | TuyaBLEDataPointType.DT_BITMAP:
                     value = raw_value
                 case TuyaBLEDataPointType.DT_BOOL:
                     value = int.from_bytes(raw_value, "big") != 0
-                case (TuyaBLEDataPointType.DT_VALUE | TuyaBLEDataPointType.DT_ENUM):
+                case TuyaBLEDataPointType.DT_VALUE | TuyaBLEDataPointType.DT_ENUM:
                     value = int.from_bytes(raw_value, "big", signed=True)
                 case TuyaBLEDataPointType.DT_STRING:
                     value = raw_value.decode()
@@ -1046,8 +1056,7 @@ class TuyaBLEDevice:
                 type.name,
                 value,
             )
-            self._datapoints._update_from_device(
-                id, timestamp, flags, type, value)
+            self._datapoints._update_from_device(id, timestamp, flags, type, value)
             datapoints.append(self._datapoints[id])
             pos = next_pos
 
@@ -1073,7 +1082,8 @@ class TuyaBLEDevice:
 
                 srand = data[6:12]
                 self._session_key = hashlib.md5(
-                    self._local_key + srand).digest()
+                    self._local_key + srand, usedforsecurity=False
+                ).digest()
                 self._auth_key = data[14:46]
 
             case TuyaBLECode.FUN_SENDER_PAIR:
@@ -1123,8 +1133,7 @@ class TuyaBLEDevice:
 
             case TuyaBLECode.FUN_RECEIVE_DP:
                 self._parse_datapoints_v3(time.time(), 0, data, 0)
-                asyncio.create_task(
-                    self._send_response(code, bytes(0), seq_num))
+                asyncio.create_task(self._send_response(code, bytes(0), seq_num))
 
             case TuyaBLECode.FUN_RECEIVE_SIGN_DP:
                 dp_seq_num = int.from_bytes(data[:2], "big")
@@ -1138,8 +1147,7 @@ class TuyaBLEDevice:
                 pos: int
                 timestamp, pos = self._parse_timestamp(data, 0)
                 self._parse_datapoints_v3(timestamp, 0, data, pos)
-                asyncio.create_task(
-                    self._send_response(code, bytes(0), seq_num))
+                asyncio.create_task(self._send_response(code, bytes(0), seq_num))
 
             case TuyaBLECode.FUN_RECEIVE_SIGN_TIME_DP:
                 timestamp: float
@@ -1178,8 +1186,8 @@ class TuyaBLEDevice:
 
         self._clean_input()
 
-        cipher = AES.new(key, AES.MODE_CBC, iv)
-        raw = cipher.decrypt(encrypted)
+        _decryptor = Cipher(algorithms.AES(key), modes.CBC(iv)).decryptor()
+        raw = _decryptor.update(encrypted) + _decryptor.finalize()
 
         seq_num: int
         response_to: int

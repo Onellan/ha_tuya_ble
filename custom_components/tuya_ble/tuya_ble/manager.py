@@ -33,8 +33,9 @@ class TuyaBLEDeviceCredentials:
             self.product_name,
         )
 
-class AbstaractTuyaBLEDeviceManager(ABC):
-    """Abstaract manager of the Tuya BLE devices credentials."""
+
+class AbstractTuyaBLEDeviceManager(ABC):
+    """Abstract manager of the Tuya BLE devices credentials."""
 
     @abstractmethod
     async def get_device_credentials(
@@ -48,23 +49,18 @@ class AbstaractTuyaBLEDeviceManager(ABC):
 
     @classmethod
     def check_and_create_device_credentials(
-        self,
+        cls,
         uuid: str | None,
         local_key: str | None,
         device_id: str | None,
         category: str | None,
         product_id: str | None,
         device_name: str | None,
+        product_model: str | None,
         product_name: str | None,
     ) -> TuyaBLEDeviceCredentials | None:
         """Checks and creates credentials of the Tuya BLE device."""
-        if (
-            uuid and 
-            local_key and 
-            device_id and
-            category and
-            product_id
-        ):
+        if uuid and local_key and device_id and category and product_id:
             return TuyaBLEDeviceCredentials(
                 uuid,
                 local_key,
@@ -72,6 +68,7 @@ class AbstaractTuyaBLEDeviceManager(ABC):
                 category,
                 product_id,
                 device_name,
+                product_model,
                 product_name,
             )
         else:

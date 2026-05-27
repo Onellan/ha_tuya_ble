@@ -1,14 +1,14 @@
 """The Tuya BLE integration."""
+
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-
 import logging
+from dataclasses import dataclass, field
 from typing import Callable
 
 from homeassistant.components.button import (
-    ButtonEntityDescription,
     ButtonEntity,
+    ButtonEntityDescription,
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -52,6 +52,7 @@ class TuyaBLEFingerbotModeMapping(TuyaBLEButtonMapping):
     )
     is_available: TuyaBLEButtonIsAvailable = is_fingerbot_in_push_mode
 
+
 @dataclass
 class TuyaBLELockMapping(TuyaBLEButtonMapping):
     description: ButtonEntityDescription = field(
@@ -60,6 +61,7 @@ class TuyaBLELockMapping(TuyaBLEButtonMapping):
         )
     )
     is_available: TuyaBLEButtonIsAvailable = 0
+
 
 @dataclass
 class TuyaBLECategoryButtonMapping:
@@ -77,12 +79,7 @@ mapping: dict[str, TuyaBLECategoryButtonMapping] = {
                 ],
             ),
             **dict.fromkeys(
-                [
-                    "blliqpsj",
-                    "ndvkgsrm",
-                    "yiihr7zh",
-                    "neq16kgd"
-                ],  # Fingerbot Plus
+                ["blliqpsj", "ndvkgsrm", "yiihr7zh", "neq16kgd"],  # Fingerbot Plus
                 [
                     TuyaBLEFingerbotModeMapping(dp_id=2),
                 ],
@@ -106,10 +103,7 @@ mapping: dict[str, TuyaBLECategoryButtonMapping] = {
     "kg": TuyaBLECategoryButtonMapping(
         products={
             **dict.fromkeys(
-                [
-                    "mknd4lci",
-                    "riecov42"
-                ],  # Fingerbot Plus
+                ["mknd4lci", "riecov42"],  # Fingerbot Plus
                 [
                     TuyaBLEFingerbotModeMapping(dp_id=108),
                 ],
@@ -118,8 +112,7 @@ mapping: dict[str, TuyaBLECategoryButtonMapping] = {
     ),
     "znhsb": TuyaBLECategoryButtonMapping(
         products={
-            "cdlandip":  # Smart water bottle
-            [
+            "cdlandip": [  # Smart water bottle
                 TuyaBLEButtonMapping(
                     dp_id=109,
                     description=ButtonEntityDescription(
@@ -130,18 +123,17 @@ mapping: dict[str, TuyaBLECategoryButtonMapping] = {
         },
     ),
     "ms": TuyaBLECategoryButtonMapping(
-          products={
-             "okkyfgfs": # Smart Lock
-             [
-                 TuyaBLELockMapping(
-                     dp_id=6,
-                     description=ButtonEntityDescription(
-                         key="bluetooth_unlock",
-                     ),
-                 ),
-             ],
-          },
-      ),
+        products={
+            "okkyfgfs": [  # Smart Lock
+                TuyaBLELockMapping(
+                    dp_id=6,
+                    description=ButtonEntityDescription(
+                        key="bluetooth_unlock",
+                    ),
+                ),
+            ],
+        },
+    ),
 }
 
 
@@ -182,7 +174,7 @@ class TuyaBLEButton(TuyaBLEEntity, ButtonEntity):
         )
         if datapoint:
             if self._product.lock:
-                #Lock needs true to activate lock/unlock commands
+                # Lock needs true to activate lock/unlock commands
                 self._hass.create_task(datapoint.set_value(True))
             else:
                 self._hass.create_task(datapoint.set_value(not bool(datapoint.value)))

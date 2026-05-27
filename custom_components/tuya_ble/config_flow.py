@@ -3,20 +3,18 @@
 from __future__ import annotations
 
 import logging
-import pycountry
 from typing import Any
 
+import pycountry
 import voluptuous as vol
-from tuya_iot import AuthType
-
+from homeassistant.components.bluetooth import (
+    BluetoothServiceInfoBleak,
+    async_discovered_service_info,
+)
 from homeassistant.config_entries import (
     ConfigEntry,
     ConfigFlow,
     OptionsFlowWithConfigEntry,
-)
-from homeassistant.components.bluetooth import (
-    BluetoothServiceInfoBleak,
-    async_discovered_service_info,
 )
 from homeassistant.const import (
     CONF_ADDRESS,
@@ -26,25 +24,25 @@ from homeassistant.const import (
 )
 from homeassistant.core import callback
 from homeassistant.data_entry_flow import FlowHandler, FlowResult
+from tuya_iot import AuthType
 
-from .tuya_ble import SERVICE_UUID, TuyaBLEDeviceCredentials
-
+from .cloud import HASSTuyaBLEDeviceManager
 from .const import (
-    DOMAIN,
     CONF_ACCESS_ID,
     CONF_ACCESS_SECRET,
-    CONF_AUTH_TYPE,
     CONF_APP_TYPE,
+    CONF_AUTH_TYPE,
     CONF_ENDPOINT,
+    DOMAIN,
     SMARTLIFE_APP,
-    TUYA_SMART_APP,
     TUYA_COUNTRIES,
     TUYA_RESPONSE_CODE,
     TUYA_RESPONSE_MSG,
     TUYA_RESPONSE_SUCCESS,
+    TUYA_SMART_APP,
 )
 from .devices import TuyaBLEData, get_device_readable_name
-from .cloud import HASSTuyaBLEDeviceManager
+from .tuya_ble import SERVICE_UUID, TuyaBLEDeviceCredentials
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -58,11 +56,15 @@ async def _try_login(
     response: dict[Any, Any] | None
     data: dict[str, Any]
 
-    country = [
+    country_matches = [
         country
         for country in TUYA_COUNTRIES
         if country.name == user_input[CONF_COUNTRY_CODE]
-    ][0]
+    ]
+    if not country_matches:
+        errors["base"] = "login_error"
+        return None
+    country = country_matches[0]
 
     data = {
         CONF_ENDPOINT: country.endpoint,
@@ -116,8 +118,8 @@ def _show_login_form(
         def_country = pycountry.countries.get(alpha_2=flow.hass.config.country)
         if def_country:
             def_country_name = def_country.name
-    except:
-        pass
+    except Exception:
+        _LOGGER.debug("Could not resolve default country name", exc_info=True)
 
     return flow.async_show_form(
         step_id="login",
@@ -315,7 +317,7 @@ class TuyaBLEConfigFlow(ConfigFlow, domain=DOMAIN):
                     discovery.address in current_addresses
                     or discovery.address in self._discovered_devices
                     or discovery.service_data is None
-                    or not SERVICE_UUID in discovery.service_data.keys()
+                    or SERVICE_UUID not in discovery.service_data.keys()
                 ):
                     continue
                 self._discovered_devices[discovery.address] = discovery

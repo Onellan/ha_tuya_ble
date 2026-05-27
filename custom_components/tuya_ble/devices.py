@@ -1,29 +1,22 @@
 """The Tuya BLE integration."""
+
 from __future__ import annotations
-from dataclasses import dataclass
 
 import logging
-from homeassistant.const import CONF_ADDRESS, CONF_DEVICE_ID
+from dataclasses import dataclass
 
+from home_assistant_bluetooth import BluetoothServiceInfoBleak
+from homeassistant.const import CONF_ADDRESS, CONF_DEVICE_ID
 from homeassistant.core import CALLBACK_TYPE, HomeAssistant, callback
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.entity import (
     DeviceInfo,
     EntityDescription,
-    generate_entity_id,
 )
 from homeassistant.helpers.event import async_call_later
 from homeassistant.helpers.update_coordinator import (
     CoordinatorEntity,
     DataUpdateCoordinator,
-)
-
-from home_assistant_bluetooth import BluetoothServiceInfoBleak
-from .tuya_ble import (
-    AbstaractTuyaBLEDeviceManager,
-    TuyaBLEDataPoint,
-    TuyaBLEDevice,
-    TuyaBLEDeviceCredentials,
 )
 
 from .cloud import HASSTuyaBLEDeviceManager
@@ -32,6 +25,12 @@ from .const import (
     DOMAIN,
     FINGERBOT_BUTTON_EVENT,
     SET_DISCONNECTED_DELAY,
+)
+from .tuya_ble import (
+    AbstractTuyaBLEDeviceManager,
+    TuyaBLEDataPoint,
+    TuyaBLEDevice,
+    TuyaBLEDeviceCredentials,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -56,6 +55,7 @@ class TuyaBLEProductInfo:
     fingerbot: TuyaBLEFingerbotInfo | None = None
     lock: int | None = None
 
+
 class TuyaBLEEntity(CoordinatorEntity):
     """Tuya BLE base entity."""
 
@@ -78,9 +78,6 @@ class TuyaBLEEntity(CoordinatorEntity):
         self._attr_has_entity_name = True
         self._attr_device_info = get_device_info(self._device)
         self._attr_unique_id = f"{self._device.device_id}-{description.key}"
-        self.entity_id = generate_entity_id(
-            "sensor.{}", self._attr_unique_id, hass=hass
-        )
 
     @property
     def available(self) -> bool:
@@ -176,8 +173,7 @@ class TuyaBLECategoryInfo:
 devices_database: dict[str, TuyaBLECategoryInfo] = {
     "sfkzq": TuyaBLECategoryInfo(
         products={
-            "nxquc5lb":  # device product_id
-            TuyaBLEProductInfo(
+            "nxquc5lb": TuyaBLEProductInfo(  # device product_id
                 name="Smart Water Valve",
             ),
         },
@@ -192,18 +188,12 @@ devices_database: dict[str, TuyaBLECategoryInfo] = {
     "ms": TuyaBLECategoryInfo(
         products={
             **dict.fromkeys(
-                [
-                    "ludzroix",
-                    "isk2p555",
-                    "gumrixyt",
-                    "uamrw6h3"
-                 ],
-                     TuyaBLEProductInfo(  # device product_id
-                     name="Smart Lock",
-                 ),
+                ["ludzroix", "isk2p555", "gumrixyt", "uamrw6h3"],
+                TuyaBLEProductInfo(  # device product_id
+                    name="Smart Lock",
+                ),
             ),
-            "okkyfgfs":
-            TuyaBLEProductInfo(
+            "okkyfgfs": TuyaBLEProductInfo(
                 name="TEKXDD Fingerprint Smart Lock",
                 lock=1,
             ),
@@ -234,12 +224,7 @@ devices_database: dict[str, TuyaBLECategoryInfo] = {
                 ),
             ),
             **dict.fromkeys(
-                [
-                    "blliqpsj",
-                    "ndvkgsrm",
-                    "yiihr7zh",
-                    "neq16kgd"
-                ],  # device product_ids
+                ["blliqpsj", "ndvkgsrm", "yiihr7zh", "neq16kgd"],  # device product_ids
                 TuyaBLEProductInfo(
                     name="Fingerbot Plus",
                     fingerbot=TuyaBLEFingerbotInfo(
@@ -282,10 +267,7 @@ devices_database: dict[str, TuyaBLECategoryInfo] = {
     "kg": TuyaBLECategoryInfo(
         products={
             **dict.fromkeys(
-                [
-                    "mknd4lci",
-                    "riecov42"
-                ],  # device product_ids
+                ["mknd4lci", "riecov42"],  # device product_ids
                 TuyaBLEProductInfo(
                     name="Fingerbot Plus",
                     fingerbot=TuyaBLEFingerbotInfo(
@@ -305,13 +287,13 @@ devices_database: dict[str, TuyaBLECategoryInfo] = {
     "wk": TuyaBLECategoryInfo(
         products={
             **dict.fromkeys(
-            [
-            "drlajpqc",
-            "nhj2j7su",
-            "zmachryv",
-            ],  # device product_id
-            TuyaBLEProductInfo(
-                name="Thermostatic Radiator Valve",
+                [
+                    "drlajpqc",
+                    "nhj2j7su",
+                    "zmachryv",
+                ],  # device product_id
+                TuyaBLEProductInfo(
+                    name="Thermostatic Radiator Valve",
                 ),
             ),
         },
@@ -328,8 +310,7 @@ devices_database: dict[str, TuyaBLECategoryInfo] = {
     ),
     "znhsb": TuyaBLECategoryInfo(
         products={
-            "cdlandip":  # device product_id
-            TuyaBLEProductInfo(
+            "cdlandip": TuyaBLEProductInfo(  # device product_id
                 name="Smart water bottle",
             ),
         },
@@ -337,13 +318,10 @@ devices_database: dict[str, TuyaBLECategoryInfo] = {
     "ggq": TuyaBLECategoryInfo(
         products={
             **dict.fromkeys(
-                [
-                    "6pahkcau",  # PPB A1
-                    "hfgdqhho"   # SGW08
-                ],
+                ["6pahkcau", "hfgdqhho"],  # PPB A1  # SGW08
                 TuyaBLEProductInfo(
                     name="Irrigation computer",
-                )
+                ),
             )
         },
     ),
@@ -374,7 +352,7 @@ def get_short_address(address: str) -> str:
 
 async def get_device_readable_name(
     discovery_info: BluetoothServiceInfoBleak,
-    manager: AbstaractTuyaBLEDeviceManager | None,
+    manager: AbstractTuyaBLEDeviceManager | None,
 ) -> str:
     credentials: TuyaBLEDeviceCredentials | None = None
     product_info: TuyaBLEProductInfo | None = None
