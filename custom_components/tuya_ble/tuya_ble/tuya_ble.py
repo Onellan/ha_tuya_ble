@@ -273,6 +273,8 @@ class TuyaBLEDevice:
         result += self._device_info.uuid.encode()
         result += self._local_key
         result += self._device_info.device_id.encode()
+        if len(result) > 44:
+            raise TuyaBLEDataFormatError()
         for _ in range(44 - len(result)):
             result += b"\x00"
 

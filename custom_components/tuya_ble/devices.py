@@ -12,6 +12,7 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.entity import (
     DeviceInfo,
     EntityDescription,
+    generate_entity_id,
 )
 from homeassistant.helpers.event import async_call_later
 from homeassistant.helpers.update_coordinator import (
@@ -78,6 +79,9 @@ class TuyaBLEEntity(CoordinatorEntity):
         self._attr_has_entity_name = True
         self._attr_device_info = get_device_info(self._device)
         self._attr_unique_id = f"{self._device.device_id}-{description.key}"
+        self.entity_id = generate_entity_id(
+            "sensor.{}", self._attr_unique_id, hass=hass
+        )
 
     @property
     def available(self) -> bool:
@@ -199,6 +203,21 @@ devices_database: dict[str, TuyaBLECategoryInfo] = {
             ),
         },
     ),
+    "jtmspro": TuyaBLECategoryInfo(
+        products={
+            "kholoaew": TuyaBLEProductInfo(  # device product_id
+                name="Nice Digi X1",
+            ),
+            "s6amdvmm": TuyaBLEProductInfo(  # device product_id
+                name="R2 Smart Lock",
+                manufacturer="Moes",
+            ),
+            "rlyxv7pe": TuyaBLEProductInfo(  # device product_id
+                name="A1 PRO MAX",
+                lock=1,
+            ),
+        },
+    ),
     "szjqr": TuyaBLECategoryInfo(
         products={
             "3yqdo5yt": TuyaBLEProductInfo(  # device product_id
@@ -224,7 +243,7 @@ devices_database: dict[str, TuyaBLECategoryInfo] = {
                 ),
             ),
             **dict.fromkeys(
-                ["blliqpsj", "ndvkgsrm", "yiihr7zh", "neq16kgd"],  # device product_ids
+                ["blliqpsj", "ndvkgsrm", "yiihr7zh", "neq16kgd", "6jcvqwh0"],  # device product_ids
                 TuyaBLEProductInfo(
                     name="Fingerbot Plus",
                     fingerbot=TuyaBLEFingerbotInfo(
@@ -267,7 +286,7 @@ devices_database: dict[str, TuyaBLECategoryInfo] = {
     "kg": TuyaBLECategoryInfo(
         products={
             **dict.fromkeys(
-                ["mknd4lci", "riecov42"],  # device product_ids
+                ["mknd4lci", "riecov42", "4ctjfrzq"],  # device product_ids
                 TuyaBLEProductInfo(
                     name="Fingerbot Plus",
                     fingerbot=TuyaBLEFingerbotInfo(
@@ -303,8 +322,14 @@ devices_database: dict[str, TuyaBLECategoryInfo] = {
             "ojzlzzsw": TuyaBLEProductInfo(  # device product_id
                 name="Soil moisture sensor",
             ),
+            "j5mynqs3": TuyaBLEProductInfo(  # device product_id
+                name="Soil moisture sensor",
+            ),
             "tv6peegl": TuyaBLEProductInfo(  # new device product_id
                 name="Soil Thermo-Hygrometer",
+            ),
+            "04nb6kdt": TuyaBLEProductInfo(  # device product_id
+                name="Temperature Humidity Sensor",
             ),
         },
     ),
@@ -318,7 +343,7 @@ devices_database: dict[str, TuyaBLECategoryInfo] = {
     "ggq": TuyaBLECategoryInfo(
         products={
             **dict.fromkeys(
-                ["6pahkcau", "hfgdqhho"],  # PPB A1  # SGW08
+                ["6pahkcau", "hfgdqhho", "qycalacn", "fnlw6npo", "jjqi2syk"],  # PPB A1  # SGW08
                 TuyaBLEProductInfo(
                     name="Irrigation computer",
                 ),

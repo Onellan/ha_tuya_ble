@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 
-from bleak_retry_connector import get_device
+from bleak_retry_connector import BLEAK_RETRY_EXCEPTIONS as BLEAK_EXCEPTIONS, get_device
 from homeassistant.components import bluetooth
 from homeassistant.components.bluetooth.match import ADDRESS, BluetoothCallbackMatcher
 from homeassistant.config_entries import ConfigEntry
@@ -48,7 +48,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     coordinator = TuyaBLECoordinator(hass, device)
 
-    hass.async_create_task(device.update())
+    try:
+        await device.update()
+    except BLEAK_EXCEPTIONS as ex:
+        raise ConfigEntryNotReady(
+            f"Could not communicate with Tuya BLE device with address {address}"
+        ) from ex
 
     @callback
     def _async_update_ble(
