@@ -58,11 +58,16 @@ async def _try_login(
     response: dict[Any, Any] | None
     data: dict[str, Any]
 
-    country = [
+    country_matches = [
         country
         for country in TUYA_COUNTRIES
         if country.name == user_input[CONF_COUNTRY_CODE]
-    ][0]
+    ]
+    if not country_matches:
+        errors["base"] = "login_error"
+        return None
+
+    country = country_matches[0]
 
     data = {
         CONF_ENDPOINT: country.endpoint,
@@ -116,7 +121,7 @@ def _show_login_form(
         def_country = pycountry.countries.get(alpha_2=flow.hass.config.country)
         if def_country:
             def_country_name = def_country.name
-    except:
+    except Exception:
         pass
 
     return flow.async_show_form(

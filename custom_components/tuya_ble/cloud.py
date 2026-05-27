@@ -1,6 +1,7 @@
 """The Tuya BLE integration."""
 from __future__ import annotations
 
+import hashlib
 import logging
 
 from dataclasses import dataclass
@@ -107,7 +108,9 @@ class HASSTuyaBLEDeviceManager(AbstaractTuyaBLEDeviceManager):
     @staticmethod
     def _get_cache_key(data: dict[str, Any]) -> str:
         key_dict = {key: data.get(key) for key in CONF_TUYA_LOGIN_KEYS}
-        return json.dumps(key_dict)
+        return hashlib.sha256(
+            json.dumps(key_dict, sort_keys=True).encode()
+        ).hexdigest()
 
     @staticmethod
     def _has_login(data: dict[Any, Any]) -> bool:

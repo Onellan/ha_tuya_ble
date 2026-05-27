@@ -274,6 +274,8 @@ class TuyaBLEDevice:
         result += self._device_info.uuid.encode()
         result += self._local_key
         result += self._device_info.device_id.encode()
+        if len(result) > 44:
+            raise TuyaBLEDataFormatError()
         for _ in range(44 - len(result)):
             result += b"\x00"
 
@@ -591,7 +593,7 @@ class TuyaBLEDevice:
                         "%s: communication failed", self.address, exc_info=True
                     )
                     continue
-                except:
+                except Exception:
                     _LOGGER.debug("%s: unexpected error",
                                   self.address, exc_info=True)
                     continue
@@ -604,7 +606,7 @@ class TuyaBLEDevice:
                         await self._client.start_notify(
                             CHARACTERISTIC_NOTIFY, self._notification_handler
                         )
-                    except:  # [BLEAK_EXCEPTIONS, BleakNotFoundError]:
+                    except Exception:  # [BLEAK_EXCEPTIONS, BleakNotFoundError]:
                         self._client = None
                         _LOGGER.error("%s: starting notifications failed",
                                       self.address, exc_info=True)
@@ -628,7 +630,7 @@ class TuyaBLEDevice:
                                 self.address,
                             )
                             continue
-                    except:  # [BLEAK_EXCEPTIONS, BleakNotFoundError]:
+                    except Exception:  # [BLEAK_EXCEPTIONS, BleakNotFoundError]:
                         self._client = None
                         _LOGGER.error("%s: Sending device info request failed",
                                       self.address, exc_info=True)
@@ -651,7 +653,7 @@ class TuyaBLEDevice:
                                 self.address,
                             )
                             continue
-                    except:  # [BLEAK_EXCEPTIONS, BleakNotFoundError]:
+                    except Exception:  # [BLEAK_EXCEPTIONS, BleakNotFoundError]:
                         self._client = None
                         _LOGGER.error("%s: Sending pairing request failed",
                                       self.address, exc_info=True)
@@ -951,7 +953,7 @@ class TuyaBLEDevice:
                         packet,
                         False,
                     )
-                except:
+                except Exception:
                     _LOGGER.error(
                         "%s: Error during sending packet",
                         self.address,
@@ -976,7 +978,7 @@ class TuyaBLEDevice:
         elif security_flag == 5:
             return self._session_key
         else:
-            pass
+            raise TuyaBLEDataFormatError()
 
     def _parse_timestamp(self, data: bytes, start_pos: int) -> tuple(float, int):
         timestamp: float
